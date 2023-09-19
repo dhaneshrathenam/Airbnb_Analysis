@@ -2,7 +2,7 @@
 
 1.Project Title:Airbnb Analysis
 
-2.skills take away From This Project:Python scripting, Data Preprocessing, Visualization,EDA, Streamlit, MongoDb, PowerBI or Tableau 
+2.skills take away From This Project:Python scripting, Data Preprocessing, Visualization,EDA, Streamlit, MongoDb, PowerBI or Tableau.
 
 
 3.Domain:Travel Industry, Property Management and Tourism 
