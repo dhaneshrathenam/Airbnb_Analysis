@@ -10,20 +10,20 @@ st.set_page_config(page_title='Airbnb Analysis',
                    layout="wide",
                    initial_sidebar_state="expanded")
 with st.sidebar:
-    option = option_menu(None, ['Home', 'Analysis', 'Map', 'About'],
+    option = option_menu(None, ['Home', 'Analysis', 'Map'],
                          icons=['house', 'graph-up', "globe-central-south-asia", 'gear'],
                          menu_icon="cast", default_index=0, orientation="vertical"
                          )
 df = pd.read_csv(r"C:\Users\Dhanesh\Downloads\Project_4\simplified_airbnb.csv")
 
 if option == 'Home':
-    st.title("Welcome")
+    st.title(":blue[Welcome]")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.write('### :green[Project Name]: Airbnb Analysis')
+        st.write('### :red[Project Name]: Airbnb Analysis')
         st.write(
-            '### :green[Technologies Used]: Python scripting, Data Preprocessing, Visualization, EDA, Streamlit, MongoDb, Tableau')
-        st.write('### :green[Domain]: Travel Industry, Property Management and Tourism')
+            '### :red[Technologies Used]: Python scripting, Data Preprocessing, Visualization, EDA, Streamlit, MongoDb, Tableau')
+        st.write('### :red[Domain]: Travel Industry, Property Management and Tourism')
 
     with col2:
 
@@ -138,5 +138,3 @@ elif option == 'Map':
         )
     )
     st.plotly_chart(fig, use_container_width=True)
-
-
