@@ -1,143 +1,142 @@
-import pandas as pd
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.express as px
-import os
+import pandas as pd
+from PIL import Image
+import geopandas as gpd
 
-
-st.set_page_config(page_title= "Airbnb Analysis",
-                    page_icon= "🇮🇳",
-                   layout= "wide",
-                   initial_sidebar_state= "expanded",
-                   menu_items={'About': """# This dashboard app is created by Dhanesh!
-                                        """})
-
-st.sidebar.header(":Red[Airbnb Analysis]")
-
-
-
+st.set_page_config(page_title='Airbnb Analysis',
+                   page_icon=":flight:",
+                   layout="wide",
+                   initial_sidebar_state="expanded")
 with st.sidebar:
-    selected =option_menu("Menu", ["Home", "Explore Data", "Powerbi"],
-                           icons=["house", "graph-up-arrow", "bar-chart-line", "exclamation-circle"],
-                           menu_icon= "menu-button-wide",
-                           default_index=0,
-                           orientation="vertical",
-                           styles={"Black": {"font-size": "20px", "text-align": "centre", "margin": "-2px",
-                                                "--hover-color": "#6F36AD"},
-                                   "icon": {"font-size": "20px"},
-                                   "": {"background-color": "#6F36AD"}})
-								   
-if selected == "Home":
+    option = option_menu(None, ['Home', 'Analysis', 'Map', 'About'],
+                         icons=['house', 'graph-up', "globe-central-south-asia", 'gear'],
+                         menu_icon="cast", default_index=0, orientation="vertical"
+                         )
+df = pd.read_csv(r"C:\Users\Dhanesh\Downloads\Project_4\simplified_airbnb.csv")
 
+if option == 'Home':
+    st.title("Welcome")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.write('### :green[Project Name]: Airbnb Analysis')
+        st.write(
+            '### :green[Technologies Used]: Python scripting, Data Preprocessing, Visualization, EDA, Streamlit, MongoDb, Tableau')
+        st.write('### :green[Domain]: Travel Industry, Property Management and Tourism')
 
-    st.header('Airbnb Analysis')
- st.subheader("Airbnb is an American San Francisco-based company operating an online marketplace for short- and long-term homestays and experiences. The company acts as a broker and charges a commission from each booking. The company was founded in 2008 by Brian Chesky, Nathan Blecharczyk, and Joe Gebbia. Airbnb is a shortened version of its original name, AirBedandBreakfast.com. The company is credited with revolutionizing the tourism industry, while also having been the subject of intense criticism by residents of tourism hotspot cities like Barcelona and Venice for enabling an unaffordable increase in home rents, and for a lack of regulation.")
- st.subheader('Skills take away From This Project:')
- st.subheader('Python Scripting, Data Preprocessing, Visualization, EDA, Streamlit, MongoDb, PowerBI or Tableau')
- st.subheader('Domain:')
- st.subheader('Travel Industry, Property management and Tourism')
+    with col2:
 
-# MENU 2 - TOP CHARTS
-if SELECT == "Explore Data":
- fl = st.file_uploader(":file_folder: Upload a file", type=(["csv", "txt", "xlsx", "xls"]))
- if fl is not None:
-    filename = fl.name
-    st.write(filename)
-    df = pd.read_csv(filename, encoding="ISO-8859-1")
- else:
-    os.chdir(r"C:\Users\Dhanesh\Downloads\Project_4")
-    df = pd.read_csv("Airbnb NYC 2019.csv", encoding="ISO-8859-1")
+        st.write(
+            '''### :green[Overview]: This project is about a dashboard that displays information and insights from the Airbnb data in an interactive and visually appealing manner.''')
 
- st.sidebar.header("Choose your filter: ")
+elif option == 'Analysis':
+    with st.sidebar:
+        countries = df['country'].unique()
+        country = st.multiselect(label='select a country', options=countries)
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        all = st.checkbox('All neighbourhoods')
+    with col2:
+        cities = df[df['country'].isin(country)]['host_neighbourhood'].unique()
+        city = st.selectbox(label='select a neighbourhood', options=cities, disabled=all)
+    with col3:
+        type = st.selectbox(label="select a property", options=['property_type', 'room_type', 'bed_type'])
+    with col4:
+        measure = st.selectbox(label='select a measure',
+                               options=['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+                                        'review_scores_rating'])
+    with col5:
+        metric = st.radio(label="Select One", options=['Sum', 'Avg'])
+    if metric == 'Avg':
+        a = df.groupby(['host_neighbourhood', type])[
+            ['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+             'review_scores_rating']].mean().reset_index()
+    else:
+        a = df.groupby(['host_neighbourhood', type])[
+            ['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+             'review_scores_rating']].sum().reset_index()
+    if not all:
+        b = a[a['host_neighbourhood'] == city]
+    else:
+        if metric == 'Avg':
+            a = df.groupby(['country', type])[
+                ['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+                 'review_scores_rating']].mean().reset_index()
+        else:
+            a = df.groupby(['country', type])[
+                ['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+                 'review_scores_rating']].sum().reset_index()
+        b = a[a['country'].isin(country)]
+    st.header(f"{metric} of {measure}")
+    with st.expander('View Dataframe'):
+        st.write(b.style.background_gradient(cmap="Reds"))
 
- # Create for neighbourhood_group
- neighbourhood_group = st.sidebar.multiselect("Pick your neighbourhood_group", df["neighbourhood_group"].unique())
- if not neighbourhood_group:
-     df2 = df.copy()
- else:
-     df2 = df[df["neighbourhood_group"].isin(neighbourhood_group)]
+    try:
+        b['text'] = b['country'] + '<br>' + b[measure].astype(str)
+        fig = px.bar(b, x=type, y=measure, color='country', text='text')
+    except:
+        b['text'] = b['host_neighbourhood'] + '<br>' + b[measure].astype(str)
+        fig = px.bar(b, x=type, y=measure, color=type, text='text')
+    st.plotly_chart(fig, use_container_width=True)
+    # donut chart
+    fig = px.pie(b, names=type, values=measure, color=measure, hole=0.5)
+    fig.update_traces(textposition='outside', textinfo='label+percent')
+    st.plotly_chart(fig, use_container_width=True)
+    # ['label', 'text', 'value', 'percent']
 
- # Create for neighbourhood
- neighbourhood = st.sidebar.multiselect("Pick the neighbourhood", df2["neighbourhood"].unique())
- if not neighbourhood:
-     df3 = df2.copy()
- else:
-     df3 = df2[df2["neighbourhood"].isin(neighbourhood)]
+elif option == 'Map':
+    with st.sidebar:
+        measure = st.selectbox(label='select a measure',
+                               options=['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+                                        'review_scores_rating'])
 
- # Filter the data based on neighbourhood_group, neighbourhood
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
- if not neighbourhood_group and not neighbourhood:
-     filtered_df = df
- elif not neighbourhood:
-     filtered_df = df[df["neighbourhood_group"].isin(neighbourhood_group)]
- elif not neighbourhood_group:
-     filtered_df = df[df["neighbourhood"].isin(neighbourhood)]
- elif neighbourhood:
-     filtered_df = df3[df["neighbourhood"].isin(neighbourhood)]
- elif neighbourhood_group:
-     filtered_df = df3[df["neighbourhood_group"].isin(neighbourhood_group)]
- elif neighbourhood_group and neighbourhood:
-     filtered_df = df3[df["neighbourhood_group"].isin(neighbourhood_group) & df3["neighbourhood"].isin(neighbourhood)]
- else:
-     filtered_df = df3[df3["neighbourhood_group"].isin(neighbourhood_group) & df3["neighbourhood"].isin(neighbourhood)]
+    merged_data = pd.merge(world, df, left_on='name', right_on='country', how='inner')
 
- room_type_df = filtered_df.groupby(by=["room_type"], as_index=False)["price"].sum()
-
- col1, col2 = st.columns(2)
- with col1:
-    st.subheader("room_type_ViewData")
-    fig = px.bar(room_type_df, x="room_type", y="price", text=['${:,.2f}'.format(x) for x in room_type_df["price"]],
-                 template="seaborn")
-    st.plotly_chart(fig, use_container_width=True, height=200)
-
- with col2:
-    st.subheader("neighbourhood_group_ViewData")
-    fig = px.pie(filtered_df, values="price", names="neighbourhood_group", hole=0.5)
-    fig.update_traces(text=filtered_df["neighbourhood_group"], textposition="outside")
+    a = merged_data.groupby('country')[['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+                                        'review_scores_rating']].mean().reset_index()
+    b = merged_data.groupby('country')['iso_a3'].first()
+    c = pd.merge(a, b, left_on='country', right_on='country', how='inner')
+    fig = px.choropleth(c,
+                        locations='iso_a3',
+                        color=measure,
+                        hover_name='country',
+                        projection='natural earth',
+                        # 'natural earth','equirectangular', 'mercator', 'orthographic', 'azimuthal equal area'
+                        color_continuous_scale='YlOrRd')
+    fig.update_layout(
+        title=f'Avg {measure}',
+        geo=dict(
+            showcoastlines=True,
+            coastlinecolor='Black',
+            showland=True,
+            landcolor='white'
+        )
+    )
     st.plotly_chart(fig, use_container_width=True)
 
- cl1, cl2 = st.columns((2))
- with cl1:
-    with st.expander("room_type wise price"):
-        st.write(room_type_df.style.background_gradient(cmap="Blues"))
-        csv = room_type_df.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Data", data=csv, file_name="room_type.csv", mime="text/csv",
-                           help='Click here to download the data as a CSV file')
-
- with cl2:
-    with st.expander("neighbourhood_group wise price"):
-        neighbourhood_group = filtered_df.groupby(by="neighbourhood_group", as_index=False)["price"].sum()
-        st.write(neighbourhood_group.style.background_gradient(cmap="Oranges"))
-        csv = neighbourhood_group.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Data", data=csv, file_name="neighbourhood_group.csv", mime="text/csv",
-                           help='Click here to download the data as a CSV file')
-
- # Create a scatter plot
- data1 = px.scatter(filtered_df, x="neighbourhood_group", y="neighbourhood", color="room_type")
- data1['layout'].update(title="Room_type in the Neighbourhood and Neighbourhood_Group wise data using Scatter Plot.",
-                        titlefont=dict(size=20), xaxis=dict(title="Neighbourhood_Group", titlefont=dict(size=20)),
-                        yaxis=dict(title="Neighbourhood", titlefont=dict(size=20)))
- st.plotly_chart(data1, use_container_width=True)
-
- with st.expander("Detailed Room Availability and Price View Data in the Neighbourhood"):
-     st.write(filtered_df.iloc[:500, 1:20:2].style.background_gradient(cmap="Oranges"))
-
- # Download orginal DataSet
- csv = df.to_csv(index=False).encode('utf-8')
- st.download_button('Download Data', data=csv, file_name="Data.csv", mime="text/csv")
-
- import plotly.figure_factory as ff
-
- st.subheader(":point_right: Neighbourhood_group wise Room_type and Minimum stay nights")
- with st.expander("Summary_Table"):
-    df_sample = df[0:5][["neighbourhood_group", "neighbourhood", "reviews_per_month", "room_type", "price", "minimum_nights", "host_name"]]
-    fig = ff.create_table(df_sample, colorscale="Cividis")
+    a = merged_data.groupby('country')[['bedrooms', 'beds', 'number_of_reviews', 'bathrooms', 'price', 'cleaning_fee',
+                                        'review_scores_rating']].sum().reset_index()
+    b = merged_data.groupby('country')['iso_a3'].first()
+    c = pd.merge(a, b, left_on='country', right_on='country', how='inner')
+    fig = px.choropleth(c,
+                        locations='iso_a3',
+                        color=measure,
+                        hover_name='country',
+                        projection='natural earth',
+                        # 'natural earth','equirectangular', 'mercator', 'orthographic', 'azimuthal equal area'
+                        color_continuous_scale='YlOrRd')
+    fig.update_layout(
+        title=f'Total {measure}',
+        geo=dict(
+            showcoastlines=True,
+            coastlinecolor='Black',
+            showland=True,
+            landcolor='white'
+        )
+    )
     st.plotly_chart(fig, use_container_width=True)
 
- # map function for room_type
 
-# If your DataFrame has columns 'Latitude' and 'Longitude':
- st.subheader("Airbnb Analysis in Map view")
- df = df.rename(columns={"Latitude": "lat", "Longitude": "lon"})
-
- st.map(df)
